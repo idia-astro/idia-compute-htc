@@ -6,14 +6,9 @@ resource "openstack_compute_keypair_v2" "htc" {
   public_key = "${file("${var.ssh_key_file}.pub")}" # Path of your SSH key
 }
 
-resource "openstack_networking_network_v2" "htc" {
-  name           = "htc"
-  admin_state_up = "true"
-}
-
 resource "openstack_networking_subnet_v2" "htc" {
   name            = "htc"
-  network_id      = "${openstack_networking_network_v2.htc.id}"
+  network_id      = "${openstack_networking_router_v2.htc.id}"
   cidr            = "10.0.0.0/24"
   ip_version      = 4
   dns_nameservers = ["8.8.8.8", "8.8.4.4"]
@@ -49,6 +44,6 @@ resource "openstack_compute_instance_v2" "htc" {
   #floating_ip = "${openstack_compute_floatingip.htc.address}"
 
   network {
-    uuid = "${openstack_networking_network_v2.htc.id}"
+    uuid = "${openstack_networking_router_v2.htc.id}"
   }
 }
