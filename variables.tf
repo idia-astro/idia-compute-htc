@@ -1,5 +1,5 @@
 variable "image" {
-  default = "Ubuntu 16.04"
+  default = "ubuntu 16.04 LTS amd64"
 }
 
 variable "flavor" {
