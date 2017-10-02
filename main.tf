@@ -14,10 +14,16 @@ resource "openstack_networking_router_v2" "htc" {
   admin_state_up   = "true"
   external_gateway = "${var.external_gateway}"
 }
+
+resource "openstack_networking_network_v2" "htc" {
+  name           = "htc"
+  admin_state_up = "true"
+}
+
 # Create a subnet which workers and headnode will communicate on.
 resource "openstack_networking_subnet_v2" "htc" {
   name            = "htc"
-  network_id      = "${openstack_networking_router_v2.htc.id}"
+  network_id      = "${openstack_networking_network_v2.htc.id}"
   cidr            = "10.0.0.0/24"
   ip_version      = 4
   dns_nameservers = ["8.8.8.8", "8.8.4.4"]
@@ -29,12 +35,12 @@ resource "openstack_networking_router_interface_v2" "htc" {
   subnet_id = "${openstack_networking_subnet_v2.htc.id}"
 }
 
-# Create a resource for floating ips and attach to the network router.
+# Create a resource for to retrieve a floating IP from the DHCP Pool
 resource "openstack_networking_floatingip_v2" "htc" {
   pool       = "${var.pool}"
-  depends_on = ["openstack_networking_router_interface_v2.htc"]
 }
 
+# We now associate the assigned floating ip to the instance created.
 resource "openstack_compute_floatingip_associate_v2" "htc" {
   floating_ip = "${openstack_networking_floatingip_v2.htc.address}"
   instance_id = "${openstack_compute_instance_v2.htc.id}"
@@ -45,12 +51,13 @@ resource "openstack_compute_floatingip_associate_v2" "htc" {
 
 resource "openstack_compute_instance_v2" "htc" {
   name = "htc"
+  availability_zone = "uct"
   image_id = "${var.image}"
-  flavor_id = "${var.flavor}"
+  flavor_name = "${var.flavor}"
   key_pair = "${openstack_compute_keypair_v2.htc.name}"
-  #floating_ip = "${openstack_compute_floatingip.htc.address}"
-
+  security_groups = ["default"]
+  #floating_ip  = "${openstack_compute_floatingip_v2.htc.address}"
   network {
-    uuid = "${openstack_networking_router_v2.htc.id}"
+    name = "htc"
   }
 }

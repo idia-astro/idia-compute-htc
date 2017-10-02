@@ -1,5 +1,7 @@
+# Using the testing tenant associated with the ARC
+
 variable "image" {
-  default = "ubuntu 16.04 LTS amd64"
+  default = "19d49854-e6cd-40e7-9c91-b4916ce27a8a"
 }
 
 variable "flavor" {
@@ -12,8 +14,10 @@ variable "ssh_user_name" {
   default = "ubuntu"
 }
 
-variable "external_gateway" {}
+variable "external_gateway" {
+  default = "587e3171-708f-4a9c-9384-fbf44d27fa8a"
+}
 
 variable "pool" {
-  default = "public"
+  default = "ext_net"
 }
