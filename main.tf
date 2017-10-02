@@ -40,8 +40,7 @@ resource "openstack_compute_instance_v2" "htc" {
   image_id = "${var.image}"
   flavor_id = "${var.flavor}"
   key_pair = "${openstack_compute_keypair_v2.htc.name}"
-  security_groups = ["${openstack_compute_secgroup_v2.htc.name}"]
-  floating_ip = "${openstack_compute_floatingip_v2.htc.address}"
+  floating_ip = "${openstack_compute_floatingip_associate_v2.htc.address}"
 
   network {
     uuid = "${openstack_networking_network_v2.htc.id}"
