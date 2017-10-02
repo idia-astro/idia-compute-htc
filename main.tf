@@ -6,8 +6,7 @@ resource "openstack_compute_keypair_v2" "htc" {
   public_key = "${file("${var.ssh_key_file}.pub")}" # Path of your SSH key
 }
 
-# Create an Openstack router to route headnode and worker machines
-# onto the internet.
+# Create an Openstack Router to route traffic from the headnode and worker machines
 
 resource "openstack_networking_router_v2" "htc" {
   name             = "htc"
@@ -15,6 +14,7 @@ resource "openstack_networking_router_v2" "htc" {
   external_gateway = "${var.external_gateway}"
 }
 
+# Create a network
 resource "openstack_networking_network_v2" "htc" {
   name           = "htc"
   admin_state_up = "true"
@@ -35,12 +35,12 @@ resource "openstack_networking_router_interface_v2" "htc" {
   subnet_id = "${openstack_networking_subnet_v2.htc.id}"
 }
 
-# Create a resource for to retrieve a floating IP from the DHCP Pool
+# Create a resource to retrieve a floating IP from the DHCP Pool
 resource "openstack_networking_floatingip_v2" "htc" {
   pool       = "${var.pool}"
 }
 
-# We now associate the assigned floating ip to the instance created.
+# We now associate the assigned floating IP to the instance created.
 resource "openstack_compute_floatingip_associate_v2" "htc" {
   floating_ip = "${openstack_networking_floatingip_v2.htc.address}"
   instance_id = "${openstack_compute_instance_v2.htc.id}"
@@ -48,7 +48,6 @@ resource "openstack_compute_floatingip_associate_v2" "htc" {
 }
 
 # Create the headnode instance so that users are able to login and submit jobs
-
 resource "openstack_compute_instance_v2" "htc" {
   name = "htc"
   availability_zone = "uct"
@@ -56,7 +55,28 @@ resource "openstack_compute_instance_v2" "htc" {
   flavor_name = "${var.flavor}"
   key_pair = "${openstack_compute_keypair_v2.htc.name}"
   security_groups = ["default"]
-  #floating_ip  = "${openstack_compute_floatingip_v2.htc.address}"
+  network {
+    name = "htc"
+  }
+
+//  provisioner "remote-exec" {
+//   connection {
+//     user     = "${var.ssh_user_name}"
+//     private_key = "${file(var.ssh_key_file)}"
+//   }
+}
+
+// Create the worker nodes and increase / decrease the count based on the number workers required
+
+resource "openstack_compute_instance_v2" "workers" {
+  count = 2
+  name = "${format("htc-worker-%02d", count.index+1)}"
+  key_pair = "${openstack_compute_keypair_v2.htc.name}"
+  availability_zone = "uct"
+  image_id = "${var.image}"
+  flavor_name = "${var.flavor}"
+  security_groups = ["default"]
+  depends_on = ["openstack_compute_instance_v2.htc"]
   network {
     name = "htc"
   }
