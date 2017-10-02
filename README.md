@@ -1,4 +1,3 @@
-# idia-compute-htc
-High Throughput Computing for DAG 
+# High Throughput Computing Execution Framework for DAG
 
 -- Work in progress
