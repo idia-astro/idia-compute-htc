@@ -30,8 +30,14 @@ resource "openstack_networking_router_interface_v2" "htc" {
   subnet_id = "${openstack_networking_subnet_v2.htc.id}"
 }
 
-resource "openstack_compute_floatingip_v2" "htc" {
+resource "openstack_networking_floatingip_v2" "htc" {
   pool       = "${var.pool}"
+  depends_on = ["openstack_networking_router_interface_v2.htc"]
+}
+
+resource "openstack_compute_floatingip_associate_v2" "htc" {
+  floating_ip = "${openstack_networking_floatingip_v2.htc.address}"
+  instance_id = "${openstack_compute_instance_v2.htc.id}"
   depends_on = ["openstack_networking_router_interface_v2.htc"]
 }
 
@@ -40,7 +46,7 @@ resource "openstack_compute_instance_v2" "htc" {
   image_id = "${var.image}"
   flavor_id = "${var.flavor}"
   key_pair = "${openstack_compute_keypair_v2.htc.name}"
-  floating_ip = "${openstack_compute_floatingip_associate_v2.htc.address}"
+  #floating_ip = "${openstack_compute_floatingip.htc.address}"
 
   network {
     uuid = "${openstack_networking_network_v2.htc.id}"
