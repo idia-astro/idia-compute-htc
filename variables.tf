@@ -1,9 +1,5 @@
 # Using the testing tenant associated with the ARC
 
-variable "image" {
-  default = "19d49854-e6cd-40e7-9c91-b4916ce27a8a"
-}
-
 variable "flavor" {
   default = "m1.medium"
 }
