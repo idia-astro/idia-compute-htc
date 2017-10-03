@@ -75,6 +75,21 @@ resource "openstack_compute_secgroup_v2" "secgroup_public_1" {
 }
 
 
+// Create a null resource for executing the provisioning process
+resource "null_resource" "provision" {
+  depends_on = ["openstack_compute_floatingip_associate_v2.htc"]
+  connection {
+      host        = "${openstack_networking_floatingip_v2.htc.address}"
+      user        = "${var.ssh_user_name}"
+      private_key = "${file(var.ssh_key_file)}"
+   }
+  provisioner "remote-exec" {
+  inline = [
+    "sudo apt-get -y update",
+    "sudo apt-get -y upgrade",
+     ]
+    }
+}
 // Compute Instances
 // Create the headnode instance so that users are able to login and submit jobs.
 // The depends_on module is needed so that the subnet is available before the instance
@@ -90,17 +105,6 @@ resource "openstack_compute_instance_v2" "htc" {
   network {
     name = "htc"
   }
-    provisioner "remote-exec" {
-      connection {
-       host        = "${openstack_networking_floatingip_v2.htc.address}"
-       user        = "${var.ssh_user_name}"
-       private_key = "${file(var.ssh_key_file)}"
-     }
-    inline = [
-      "sudo apt-get -y update",
-      "sudo apt-get -y upgrade",
-       ]
-     }
 }
 
 # Create the worker nodes and increase / decrease the count based on the number workers required
@@ -111,7 +115,7 @@ resource "openstack_compute_instance_v2" "workers" {
   availability_zone = "uct"
   image_id          = "${data.openstack_images_image_v2.ubuntu1604.id}"
   flavor_name       = "${var.flavor}"
-  security_groups   = ["${openstack_compute_secgroup_v2.secgroup_public_1.name}"]
+  security_groups   = ["${openstack_compute_secgroup_v2.secgroup_private_1.name}"]
   depends_on        = ["openstack_compute_instance_v2.htc"]
   network {
     name            = "htc"
