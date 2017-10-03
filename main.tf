@@ -58,12 +58,16 @@ resource "openstack_compute_instance_v2" "htc" {
   network {
     name = "htc"
   }
-
-//  provisioner "remote-exec" {
-//   connection {
-//     user     = "${var.ssh_user_name}"
-//     private_key = "${file(var.ssh_key_file)}"
-//   }
+  provisioner "remote-exec" {
+     connection {
+       user     = "${var.ssh_user_name}"
+       private_key = "${file(var.ssh_key_file)}"
+     }
+     inline = [
+       "sudo apt-get -y update",
+       "sudo apt-get -y upgrade",
+       ]
+     }
 }
 
 // Create the worker nodes and increase / decrease the count based on the number workers required
