@@ -52,31 +52,35 @@ resource "openstack_compute_floatingip_associate_v2" "htc" {
   depends_on = ["openstack_networking_router_interface_v2.htc"]
 }
 
-# Create the headnode instance so that users are able to login and submit jobs
+// Create the headnode instance so that users are able to login and submit jobs.
+// The depends_on module is needed so that the subnet is available before the instance
+// is booted.
+
 resource "openstack_compute_instance_v2" "htc" {
-  name = "htc"
+  name              = "htc-headnode"
   availability_zone = "uct"
-  image_id = "${data.openstack_images_image_v2.ubuntu1604.id}"
-  flavor_name = "${var.flavor}"
-  key_pair = "${openstack_compute_keypair_v2.htc.name}"
-  security_groups = ["default"]
+  image_id          = "${data.openstack_images_image_v2.ubuntu1604.id}"
+  flavor_name       = "${var.flavor}"
+  key_pair          = "${openstack_compute_keypair_v2.htc.name}"
+  security_groups    = ["default"]
+  depends_on = ["openstack_networking_subnet_v2.htc"]
   network {
     name = "htc"
   }
-//  provisioner "remote-exec" {
-//     connection {
-//       agent = "true"
-//     user     = "${var.ssh_user_name}"
-//       private_key = "${file(var.ssh_key_file)}"
-//     }
-//     inline = [
-//       "sudo apt-get -y update",
-//       "sudo apt-get -y upgrade",
-//       ]
-//     }
+    provisioner "remote-exec" {
+      connection {
+       agent       = "true"
+       user        = "${var.ssh_user_name}"
+       private_key = "${file(var.ssh_key_file)}"
+     }
+     inline = [
+      "sudo apt-get -y update",
+      "sudo apt-get -y upgrade",
+       ]
+     }
 }
 
-// Create the worker nodes and increase / decrease the count based on the number workers required
+# Create the worker nodes and increase / decrease the count based on the number workers required
 
 resource "openstack_compute_instance_v2" "workers" {
   count = 2
@@ -90,4 +94,10 @@ resource "openstack_compute_instance_v2" "workers" {
   network {
     name = "htc"
   }
+}
+
+// The output is important so that Russ knows which headnode IP/DNS to connect to
+// once the terraform completes. Complete this please....
+output "ip" {
+  value = "${openstack_networking_floatingip_v2.htc.address}"
 }
