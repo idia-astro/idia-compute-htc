@@ -4,7 +4,9 @@ variable "flavor" {
   default = "m1.medium"
 }
 
-variable "ssh_key_file" {}
+variable "ssh_key_file" {
+  default = "/home/tcarr/.ssh/terraform-htc"
+}
 
 variable "ssh_user_name" {
   default = "ubuntu"
