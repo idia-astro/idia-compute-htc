@@ -53,17 +53,17 @@ resource "openstack_compute_floatingip_associate_v2" "htc" {
 }
 
 // Security Groups
-resource "openstack_compute_secgroup_v2" "secgroup_htc_1" {
+resource "openstack_compute_secgroup_v2" "secgroup_private_1" {
   name          = "htc-priv-sec-grp"
   description   = "htc-security group for private network"
   rule {
-    from_port   = 0
+    from_port   = 1
     to_port     = 65535
     ip_protocol = "tcp"
     cidr        = "10.0.0.0/24"
   }
 }
-resource "openstack_compute_secgroup_v2" "secgroup_htc_2" {
+resource "openstack_compute_secgroup_v2" "secgroup_public_1" {
   name          = "htc-public-sec-grp"
   description   = "htc-security group for public network"
   rule {
@@ -85,18 +85,17 @@ resource "openstack_compute_instance_v2" "htc" {
   image_id          = "${data.openstack_images_image_v2.ubuntu1604.id}"
   flavor_name       = "${var.flavor}"
   key_pair          = "${openstack_compute_keypair_v2.htc.name}"
-  security_groups   = ["${var.htc-public-sec-grp}","${var.htc-priv-sec-grp}"]
+  security_groups   = ["${openstack_compute_secgroup_v2.secgroup_private_1.name}","${openstack_compute_secgroup_v2.secgroup_public_1.name}"]
   depends_on        = ["openstack_networking_subnet_v2.htc"]
   network {
     name = "htc"
   }
     provisioner "remote-exec" {
       connection {
-       agent       = "true"
        user        = "${var.ssh_user_name}"
        private_key = "${file(var.ssh_key_file)}"
      }
-     inline = [
+    inline = [
       "sudo apt-get -y update",
       "sudo apt-get -y upgrade",
        ]
@@ -111,7 +110,7 @@ resource "openstack_compute_instance_v2" "workers" {
   availability_zone = "uct"
   image_id          = "${data.openstack_images_image_v2.ubuntu1604.id}"
   flavor_name       = "${var.flavor}"
-  security_groups   = ["${var.htc-priv-sec-grp}"]
+  security_groups   = ["${openstack_compute_secgroup_v2.secgroup_public_1.name}"]
   depends_on        = ["openstack_compute_instance_v2.htc"]
   network {
     name            = "htc"
