@@ -92,6 +92,7 @@ resource "openstack_compute_instance_v2" "htc" {
   }
     provisioner "remote-exec" {
       connection {
+       host        = "${openstack_networking_floatingip_v2.htc.address}"
        user        = "${var.ssh_user_name}"
        private_key = "${file(var.ssh_key_file)}"
      }
