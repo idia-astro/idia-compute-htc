@@ -19,3 +19,15 @@ variable "external_gateway" {
 variable "pool" {
   default = "ext_net"
 }
+
+variable "public_cdir" {
+  default = "137.158.0.0/16"
+}
+
+variable "private_cdir" {
+  default = "10.0.0.0/24"
+}
+
+variable "ssh_port_num"{
+  default = "22"
+}

@@ -1,4 +1,5 @@
-
+// Maintainer: Timothy Carr
+// Terraform IAC for deploying an HTcondor cluster
 
 // Find most recent Ubuntu 16.04 LTS Image
 data "openstack_images_image_v2" "ubuntu1604" {
@@ -60,17 +61,18 @@ resource "openstack_compute_secgroup_v2" "secgroup_private_1" {
     from_port   = 1
     to_port     = 65535
     ip_protocol = "tcp"
-    cidr        = "10.0.0.0/24"
+    cidr        = "${var.private_cdir}"
   }
 }
+
 resource "openstack_compute_secgroup_v2" "secgroup_public_1" {
   name          = "htc-public-sec-grp"
   description   = "htc-security group for public network"
   rule {
-    from_port   = 22
-    to_port     = 22
+    from_port   = "${var.ssh_port_num}"
+    to_port     = "${var.ssh_port_num}"
     ip_protocol = "tcp"
-    cidr        = "137.158.0.0/16"
+    cidr        = "${var.public_cdir}"
   }
 }
 
@@ -85,8 +87,9 @@ resource "null_resource" "provision" {
       private_key = "${file(var.ssh_key_file)}"
    }
   provisioner "remote-exec" {
-  inline = [
+   inline = [
     "sudo apt-get -y update",
+    "sudo timedatectl set-timezone Africa/Johannesburg",
      ]
     }
 }
@@ -110,7 +113,7 @@ resource "openstack_compute_instance_v2" "htc" {
 
 // Create the worker nodes and increase / decrease the count based on the number workers required
 resource "openstack_compute_instance_v2" "workers" {
-  count             = 2
+  count             = 4
   name              = "${format("htc-worker-%02d", count.index+1)}"
   key_pair          = "${openstack_compute_keypair_v2.htc.name}"
   availability_zone = "uct"
@@ -121,23 +124,22 @@ resource "openstack_compute_instance_v2" "workers" {
   network {
     name            = "htc"
   }
-
-    connection {
-      bastion_host                = "${openstack_networking_floatingip_v2.htc.address}"
-      bastion_user                = "${var.ssh_user_name}"
-      bastion_private_key         = "${file(var.ssh_key_file)}"
-      user                        = "${var.ssh_user_name}"
-      private_key                 = "${file(var.ssh_key_file)}"
-   }
-    provisioner "remote-exec" {
+     provisioner "remote-exec" {
            inline = [
            "sudo apt-get -y update",
+           "sudo timedatectl set-timezone Africa/Johannesburg",
            ]
-      }
-
+         connection {
+            bastion_host                = "${openstack_networking_floatingip_v2.htc.address}"
+            bastion_user                = "${var.ssh_user_name}"
+            bastion_private_key         = "${file(var.ssh_key_file)}"
+            user                        = "${var.ssh_user_name}"
+            private_key                 = "${file(var.ssh_key_file)}"
+          }
+     }
 }
 
 // Output module allows can echo information about what has been completed.
-output "ip" {
+output "headnode_ip" {
   value             = "${openstack_networking_floatingip_v2.htc.address}"
 }
