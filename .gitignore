@@ -1,0 +1,5 @@
+terraform
+testing-openrc_v2.sh
+testing-openrc_v3.sh
+.terraform
+.git
