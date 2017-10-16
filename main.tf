@@ -128,6 +128,9 @@ resource "openstack_compute_instance_v2" "workers" {
   network {
     name            = "htc"
   }
+  network {
+    name            = "idia-bgfs"
+  }
      provisioner "remote-exec" {
            inline = [
            "sudo apt-get -y update",
