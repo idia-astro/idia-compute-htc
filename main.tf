@@ -108,7 +108,7 @@ resource "openstack_compute_instance_v2" "htc" {
   security_groups   = ["${openstack_compute_secgroup_v2.secgroup_private_1.name}","${openstack_compute_secgroup_v2.secgroup_public_1.name}"]
   depends_on        = ["openstack_networking_subnet_v2.htc"]
   network {
-    name = "htc"
+    name = "private-net"
   }
   network {
     name = "idia-bgfs"
@@ -126,7 +126,7 @@ resource "openstack_compute_instance_v2" "workers" {
   security_groups   = ["${openstack_compute_secgroup_v2.secgroup_private_1.name}"]
   depends_on        = ["openstack_compute_instance_v2.htc"]
   network {
-    name            = "htc"
+    name            = "private-net"
   }
   network {
     name            = "idia-bgfs"
