@@ -90,6 +90,7 @@ resource "null_resource" "provision" {
    inline = [
     "sudo apt-get -y update",
     "sudo timedatectl set-timezone Africa/Johannesburg",
+    "sudo apt-get install slurm-llnl",
      ]
     }
 }
@@ -113,7 +114,7 @@ resource "openstack_compute_instance_v2" "htc" {
 
 // Create the worker nodes and increase / decrease the count based on the number workers required
 resource "openstack_compute_instance_v2" "workers" {
-  count             = 4
+  count             = 2
   name              = "${format("htc-worker-%02d", count.index+1)}"
   key_pair          = "${openstack_compute_keypair_v2.htc.name}"
   availability_zone = "uct"
@@ -128,6 +129,8 @@ resource "openstack_compute_instance_v2" "workers" {
            inline = [
            "sudo apt-get -y update",
            "sudo timedatectl set-timezone Africa/Johannesburg",
+           "sudo apt-get install slurm-llnl"
+
            ]
          connection {
             bastion_host                = "${openstack_networking_floatingip_v2.htc.address}"
