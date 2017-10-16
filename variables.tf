@@ -1,7 +1,11 @@
 # Using the testing tenant associated with the ARC
 
-variable "flavor" {
-  default = "m1.medium"
+variable "flavor-head" {
+  default = "idia.large"
+}
+
+variable "flavor-worker" {
+  default = "idia.maximum"
 }
 
 variable "ssh_key_file" {

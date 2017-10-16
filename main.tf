@@ -3,7 +3,7 @@
 
 // Find most recent Ubuntu 16.04 LTS Image
 data "openstack_images_image_v2" "ubuntu1604" {
-  name        = "ubuntu 16.04 LTS amd64"
+  name        = "idia-ubuntu-16.04-Ninja"
   most_recent = true
 }
 
@@ -23,7 +23,7 @@ resource "openstack_networking_network_v2" "htc" {
 resource "openstack_networking_subnet_v2" "htc" {
   name            = "htc"
   network_id      = "${openstack_networking_network_v2.htc.id}"
-  cidr            = "10.0.0.0/24"
+  cidr            = "192.168.0.0/24"
   ip_version      = 4
   dns_nameservers = ["8.8.8.8", "8.8.4.4"]
 }
@@ -103,23 +103,26 @@ resource "openstack_compute_instance_v2" "htc" {
   name              = "htc-headnode"
   availability_zone = "uct"
   image_id          = "${data.openstack_images_image_v2.ubuntu1604.id}"
-  flavor_name       = "${var.flavor}"
+  flavor_name       = "${var.flavor-head}"
   key_pair          = "${openstack_compute_keypair_v2.htc.name}"
   security_groups   = ["${openstack_compute_secgroup_v2.secgroup_private_1.name}","${openstack_compute_secgroup_v2.secgroup_public_1.name}"]
   depends_on        = ["openstack_networking_subnet_v2.htc"]
   network {
     name = "htc"
   }
+  network {
+    name = "idia-bgfs"
+  }
 }
 
 // Create the worker nodes and increase / decrease the count based on the number workers required
 resource "openstack_compute_instance_v2" "workers" {
-  count             = 2
+  count             = 1
   name              = "${format("htc-worker-%02d", count.index+1)}"
   key_pair          = "${openstack_compute_keypair_v2.htc.name}"
   availability_zone = "uct"
   image_id          = "${data.openstack_images_image_v2.ubuntu1604.id}"
-  flavor_name       = "${var.flavor}"
+  flavor_name       = "${var.flavor-worker}"
   security_groups   = ["${openstack_compute_secgroup_v2.secgroup_private_1.name}"]
   depends_on        = ["openstack_compute_instance_v2.htc"]
   network {
