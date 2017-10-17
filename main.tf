@@ -102,6 +102,9 @@ resource "openstack_compute_instance_v2" "workers" {
   network {
     name            = "idia-bgfs"
   }
+     provisioner "local-exec" {
+	      command = "sleep ${var.wait_time_vm} && echo done waiting worker VM ready"
+    }
      provisioner "remote-exec" {
            inline = [
            "sudo apt-get -y update",

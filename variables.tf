@@ -35,3 +35,11 @@ variable "private_cdir" {
 variable "ssh_port_num"{
   default = "22"
 }
+
+variable "clustername" {
+  default = "IDIA"
+}
+
+variable "wait_time_vm" {
+  default = "30"
+}
