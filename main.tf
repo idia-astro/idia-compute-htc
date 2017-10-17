@@ -1,7 +1,7 @@
 // Maintainer: Timothy Carr
 // Terraform IAC for deploying an HTcondor cluster
 
-// Find most recent Ubuntu 16.04 LTS Image
+// Find most recent Ubuntu 16.04 LTS Ninja Image - https://github.com/idia-astro/idia-ninja-compute-image
 data "openstack_images_image_v2" "ubuntu1604" {
   name        = "idia-ubuntu-16.04-Ninja"
   most_recent = true
@@ -13,34 +13,6 @@ resource "openstack_compute_keypair_v2" "htc" {
   public_key  = "${file("${var.ssh_key_file}.pub")}" # Path of your SSH key
 }
 
-// Create a network
-resource "openstack_networking_network_v2" "htc" {
-  name            = "htc"
-  admin_state_up  = "true"
-}
-
-// Create a subnet which workers and headnode will communicate on.
-resource "openstack_networking_subnet_v2" "htc" {
-  name            = "htc"
-  network_id      = "${openstack_networking_network_v2.htc.id}"
-  cidr            = "192.168.0.0/24"
-  ip_version      = 4
-  dns_nameservers = ["8.8.8.8", "8.8.4.4"]
-}
-
-// Create an Openstack Router to route traffic from the headnode and worker machines
-resource "openstack_networking_router_v2" "htc" {
-  name             = "htc"
-  admin_state_up   = "true"
-  external_gateway = "${var.external_gateway}"
-}
-
-// Create an interface on the network router.
-resource "openstack_networking_router_interface_v2" "htc" {
-  router_id     = "${openstack_networking_router_v2.htc.id}"
-  subnet_id     = "${openstack_networking_subnet_v2.htc.id}"
-}
-
 // Create a resource to retrieve a floating IP from the DHCP Pool
 resource "openstack_networking_floatingip_v2" "htc" {
   pool           = "${var.pool}"
@@ -50,7 +22,6 @@ resource "openstack_networking_floatingip_v2" "htc" {
 resource "openstack_compute_floatingip_associate_v2" "htc" {
   floating_ip   = "${openstack_networking_floatingip_v2.htc.address}"
   instance_id   = "${openstack_compute_instance_v2.htc.id}"
-  depends_on    = ["openstack_networking_router_interface_v2.htc"]
 }
 
 // Create the Security Groups
@@ -86,11 +57,12 @@ resource "null_resource" "provision" {
       user        = "${var.ssh_user_name}"
       private_key = "${file(var.ssh_key_file)}"
    }
-  provisioner "remote-exec" {
+
+   provisioner "remote-exec" {
    inline = [
     "sudo apt-get -y update",
     "sudo timedatectl set-timezone Africa/Johannesburg",
-    "sudo apt-get install slurm-llnl",
+    "sudo apt-get install -y slurm-llnl",
      ]
     }
 }
@@ -106,7 +78,6 @@ resource "openstack_compute_instance_v2" "htc" {
   flavor_name       = "${var.flavor-head}"
   key_pair          = "${openstack_compute_keypair_v2.htc.name}"
   security_groups   = ["${openstack_compute_secgroup_v2.secgroup_private_1.name}","${openstack_compute_secgroup_v2.secgroup_public_1.name}"]
-  depends_on        = ["openstack_networking_subnet_v2.htc"]
   network {
     name = "private-net"
   }
@@ -117,7 +88,7 @@ resource "openstack_compute_instance_v2" "htc" {
 
 // Create the worker nodes and increase / decrease the count based on the number workers required
 resource "openstack_compute_instance_v2" "workers" {
-  count             = 1
+  count             = 4
   name              = "${format("htc-worker-%02d", count.index+1)}"
   key_pair          = "${openstack_compute_keypair_v2.htc.name}"
   availability_zone = "uct"
@@ -135,8 +106,7 @@ resource "openstack_compute_instance_v2" "workers" {
            inline = [
            "sudo apt-get -y update",
            "sudo timedatectl set-timezone Africa/Johannesburg",
-           "sudo apt-get install slurm-llnl"
-
+           "sudo apt-get install -y slurm-llnl",
            ]
          connection {
             bastion_host                = "${openstack_networking_floatingip_v2.htc.address}"
